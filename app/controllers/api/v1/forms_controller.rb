@@ -12,13 +12,13 @@ class Api::V1::FormsController < Api::V1::ApiController
     render json: @form, include: 'questions'
   end
 
-  def update
-    @form.update(form_params)
+  def create
+    @form = Form.create(form_params)
     render json: @form
   end
 
-  def create
-    @form = Form.create(form_params)
+  def update
+    @form.update(form_params)
     render json: @form
   end
 
