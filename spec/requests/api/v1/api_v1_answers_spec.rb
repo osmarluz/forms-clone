@@ -25,8 +25,8 @@ RSpec.describe "Api::V1::Answers", type: :request do
       end
 
       it "returns answers with correct data" do
-        expect(json[0]).to eql(JSON.parse(@answer1.to_json))
-        expect(json[1]).to eql(JSON.parse(@answer2.to_json))
+        expect(json[0].except('questions_answers')).to eql(JSON.parse(@answer1.to_json))
+        expect(json[1].except('questions_answers')).to eql(JSON.parse(@answer2.to_json))
       end
     end
   end
@@ -75,45 +75,39 @@ RSpec.describe "Api::V1::Answers", type: :request do
   end
 
   describe "POST /answers" do
-    context "with invalid authentication headers" do
-      it_behaves_like :deny_without_authorization, :post, "/api/v1/answers"
-    end
+    context "and with valid form id" do
+      before do
+        @user = create(:user)
+        @form = create(:form, user: @user)       
+        @question = create(:question, form: @form)
+        @questions_answers_1_attributes = attributes_for(:questions_answer, question_id: @question.id)  
+        @questions_answers_2_attributes = attributes_for(:questions_answer, question_id: @question.id)
 
-    context "with valid authentication headers" do
-      context "and with valid form id" do
-        before do
-          @user = create(:user)
-          @form = create(:form, user: @user)       
-          @question = create(:question, form: @form)
-          @questions_answers_1_attributes = attributes_for(:questions_answer, question_id: @question.id)  
-          @questions_answers_2_attributes = attributes_for(:questions_answer, question_id: @question.id)
-
-          post "/api/v1/answers", params: {form_id: @form.id, questions_answers: [@questions_answers_1_attributes, @questions_answers_2_attributes]}, headers: header_with_authentication(@user)
-        end
-
-        it "returns success status (200)" do
-          expect_status(200)
-        end
-
-        it "associates answer with the correct form" do
-          expect(@form).to eql(Answer.last.form)
-        end
-
-        it "associates questions_answers to the answer" do
-          expect(json["id"]).to eql(QuestionsAnswer.first.answer.id)
-          expect(json["id"]).to eql(QuestionsAnswer.last.answer.id)          
-        end
+        post "/api/v1/answers", params: {form_id: @form.id, questions_answers: [@questions_answers_1_attributes, @questions_answers_2_attributes]}, headers: header_with_authentication(@user)
       end
 
-      context "and with invalid form id" do
-        before do
-          @other_user = create(:user)
-          post "/api/v1/answers", params: {form_id: 0}, headers: header_with_authentication(@user)
-        end
+      it "returns success status (200)" do
+        expect_status(200)
+      end
 
-        it "returns not found status (404)" do
-          expect_status(404)
-        end
+      it "associates answer with the correct form" do
+        expect(@form).to eql(Answer.last.form)
+      end
+
+      it "associates questions_answers to the answer" do
+        expect(json["id"]).to eql(QuestionsAnswer.first.answer.id)
+        expect(json["id"]).to eql(QuestionsAnswer.last.answer.id)          
+      end
+    end
+
+    context "and with invalid form id" do
+      before do
+        @other_user = create(:user)
+        post "/api/v1/answers", params: {form_id: 0}, headers: header_with_authentication(@other_user)
+      end
+
+      it "returns not found status (404)" do
+        expect_status(404)
       end
     end
   end
