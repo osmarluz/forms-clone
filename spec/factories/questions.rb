@@ -1,7 +1,7 @@
 FactoryBot.define do
   factory :question do
     title { FFaker::Lorem.phrase }
-    question_type { rand(0..3) } # :short_text, :long_text, :integer, :boolean
+    question_type { [ "short_text", "long_text", "integer", "boolean" ].sample }
     form
   end
 end
